@@ -1,7 +1,7 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PIN 6
-#define LED_COUNT 40
+#define LED_COUNT 50
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = pin number (most are valid)
 // Parameter 3 = pixel type flags, add together as needed:
@@ -37,7 +37,7 @@ delay(1000);
 void colorWipe(int r, int g, int b, int wait) {
   uint32_t color = strip.Color(r,   g,   b);
 
-  for(int i=0; i<10;i++)
+  for(int i=0; i<20;i++)
   {
     strip.setPixelColor(i,color);
     strip.show();
@@ -46,7 +46,7 @@ void colorWipe(int r, int g, int b, int wait) {
   for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
        fade(10,r,g,b,i);
     strip.setPixelColor(i, color);  
-    for(int j=0; j<10;j++)
+    for(int j=0; j<20;j++)
   {
     strip.setPixelColor(j,color);
   }//  Set pixel's color (in RAM)
@@ -54,7 +54,7 @@ void colorWipe(int r, int g, int b, int wait) {
     //  Update strip to match
     delay(wait);                           //  Pause for a moment
   }
-  for(int i=0; i<10;i++)
+  for(int i=0; i<20;i++)
   {
     strip.setPixelColor(i,color);
     strip.show();
@@ -63,14 +63,14 @@ void colorWipe(int r, int g, int b, int wait) {
 
 void inverseColorWipe(int r, int g, int b, int wait) {
  uint32_t color = strip.Color(r,g,b);
-  for(int i=strip.numPixels(); i>=0; i--) { // For each pixel in strip...
+  for(int i=strip.numPixels(); i>=10; i--) { // For each pixel in strip...
     strip.setPixelColor(i, color); 
-        inverseFade(10,r,g,b,i, 10);
+        inverseFade(10,r,g,b,i);
 //  Set pixel's color (in RAM)
     strip.show();                          //  Update strip to match
     delay(wait);                           //  Pause for a moment
   }
-   for(int i=0; i<10;i++)
+   for(int i=0; i<20;i++)
   {
     strip.setPixelColor(i,strip.Color(0,0,0));
     strip.show();
@@ -86,7 +86,7 @@ for (int ahead=0;ahead <fadeLength;ahead++){
     }
   }
 }
-void inverseFade(int fadeLength,int r, int g, int b, int currentPixel, int end){
+void inverseFade(int fadeLength,int r, int g, int b, int currentPixel){
     int diff = strip.numPixels()-currentPixel;
     if (diff<fadeLength){
         fadeLength=diff;

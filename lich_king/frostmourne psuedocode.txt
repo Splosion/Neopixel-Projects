@@ -1,0 +1,64 @@
+colour currentColour
+int incrementRed
+int incrementGreen
+int incrementBlue
+bool isPositiveIncrement
+bool fastAnimate
+int currentLED
+
+colour orange
+colour blue
+colour noColour
+
+loop(){
+if buttonPushed && secSinceLastPush > 5 && !orangeFlag
+	currentColour = noColour
+	fastAnimate = true;
+	fastAnimate(currentColour,orange)
+	orangeFlag = true
+	secSinceLastPush = 0
+if buttonPushed && secSinceLastPush > 5 && orangeFlag
+	currentColour = noColour
+	animate(currentColour,blue)
+	orangeFlag = false
+	secSinceLastPush = 0
+if orangeFlag && isPositiveIncrement
+	animate(currentColour, orange)
+else if isPositiveIncrement
+	animate(currentColour, blue) 
+else
+	animate(currentColour, noColour)
+	}
+
+secSinceLastPush++
+
+animate(colour, targetColour){
+	if incrementRed == 0  && incrementGreen == 0 && incrementBlue == 0
+		calculateIncrement(colour,targetColour, fastAnimate)
+	if isPositiveIncrement
+		currentColour = colour(min(255,colour.Red + incrementRed), 
+						min(255,colour.Green + incrementGreen),
+						min(255,colour.Blue + incrementBlue))
+		setLEDColour(currentLED) = currentColour
+		if currentColour == targetColour
+			isPositiveIncrement = false
+			incrementRed = incrementGreen = incrementBlue = 0
+		if fastAnimate
+			fastAnimate = false
+	else
+		currentColour = colour.Red - incrementRed, colour.Green - incrementGreen, colour.Blue - incrementBlue
+		for(int i=0; i < numLeds; i++)
+			setLEDColour(i) = currentColour
+		if currentColour == noColour
+			isPositiveIncrement = true
+}
+
+calculateIncrement(colour, targetColour){
+	incrementRed = (targetColour.Red - colour.Red)/5
+	incrementGreen = (targetColour.Green - colour.Green)/5
+	incrementBlue = (targetColour.Blue - colour.Blue)/5
+	if fastAnimate
+		incrementRed = incrementRed*2
+		incrementGreen = incrementGreen*2
+		incrementBlue = incrementBlue*2
+}

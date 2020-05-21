@@ -1,0 +1,7 @@
+{
+    "programmer": "AVR ISP",
+    "board": "arduino:avr:nano",
+    "configuration": "cpu=atmega168",
+    "port": "COM12",
+    "sketch": "LK_receiver_sword.ino"
+}
