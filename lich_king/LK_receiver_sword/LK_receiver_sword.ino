@@ -45,6 +45,7 @@ int currentLED = 0;
 void setup(void)
 {
     Serial.begin(9600);
+    previousButtonPress = millis();
     FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS); // Setup FastLED Library
     FastLED.clear();                                    // Clear the RGB Stick LEDs
 
@@ -81,20 +82,16 @@ void loop(void)
                 Serial.println("Button Pressed after 5 sec");
                 previousButtonPress = millis();
                 fastAnimate = true;
-                memcpy(currentColour, noColour, 3);
                 buttonColour = !buttonColour;
+
+                //reset animation
+                positiveIncrement = true;
+                memcpy(currentColour, noColour, 3);
                 incrementRed = 0;
                 incrementBlue = 0;
                 incrementGreen = 0;
                 currentLED = 0;
-                // if (!buttonColour)
-                // {
-                //     buttonColour = true;
-                // }
-                // else
-                // {
-                //     buttonColour = false;
-                // }
+
             }
         }
     }
@@ -141,7 +138,6 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         FastLED.show();
         if (colourCompare(currentColour, targetColour) == true)
         {
-
             incrementRed = 0;
             incrementGreen = 0;
             incrementBlue = 0;
@@ -152,9 +148,6 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         if (currentLED == 5)
         {
             positiveIncrement = false;
-        }
-        if (fastAnimate && currentLED == 5)
-        {
             fastAnimate = false;
         }
     }
