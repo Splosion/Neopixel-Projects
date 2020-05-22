@@ -16,9 +16,12 @@ Thx!
 #include "FastLED.h" // FastLED library for WS2812 RGB Stick http://fastled.io/
 
 #define NUM_LEDS 10 // Number of leds on stick
-#define LED_PIN 6   // Digital In (DI) of RGB Stick connected to pin 8 of the UNO
+#define NUM_LEDS_STATIC 4
+#define LED_PIN 6 // Digital In (DI) of RGB Stick connected to pin 6 of the UNO
+#define STATIC_LED_PIN 7
 
 CRGB leds[NUM_LEDS]; // FastLED Library Init
+CRGB staticLeds[NUM_LEDS_STATIC];
 
 int ReceivedMessage[1] = {000}; // Used to store value received by the NRF24L01
 
@@ -35,7 +38,7 @@ uint8_t noColour[3] = {0, 0, 0};
 uint8_t incrementRed = 0;
 uint8_t incrementGreen = 0;
 uint8_t incrementBlue = 0;
-uint8_t currentColour[3]{0, 0, 0};
+uint8_t currentColour[3] = {0, 0, 0};
 
 bool positiveIncrement = true;
 bool fastAnimate = false;
@@ -43,19 +46,14 @@ bool buttonColour = false;
 int currentLED = 0;
 
 int animationStepTime = 50;
-int fastAnimationMultiplier=3;
+int fastAnimationMultiplier = 3;
 
 void setup(void)
 {
     previousButtonPress = millis();
-    FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS); // Setup FastLED Library
-    FastLED.clear();                                    // Clear the RGB Stick LEDs
-
-    // Light up starting LED's
-    for (int x = 0; x != NUM_LEDS; x++)
-    {
-        leds[x].setRGB(0, 0, 0);
-    }
+    FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);                     // Setup FastLED Library
+    FastLED.addLeds<NEOPIXEL, STATIC_LED_PIN>(staticLeds, NUM_LEDS_STATIC); // Setup FastLED Library
+    FastLED.clear();                                                        // Clear the RGB Stick LEDs
 
     FastLED.setBrightness(85);
     FastLED.show();
@@ -75,7 +73,7 @@ void loop(void)
     while (radio.available())
     {
         radio.read(ReceivedMessage, 1); // Read information from the NRF24L01
-        if (ReceivedMessage[0] == 111) // Indicates switch is pressed
+        if (ReceivedMessage[0] == 111)  // Indicates switch is pressed
         {
             if (millis() >= previousButtonPress + 1000)
             {
@@ -105,10 +103,12 @@ void loop(void)
         if (buttonColour)
         {
             animate(currentColour, orange);
+            changeStaticLeds(orange);
         }
         else
         {
             animate(currentColour, blue);
+            changeStaticLeds(blue);
         }
     }
     else
@@ -117,7 +117,15 @@ void loop(void)
     }
 }
 
+void changeStaticLeds(uint8_t colour[3])
+{
+    for (int i = 0; i < NUM_LEDS_STATIC; i++)
+        staticLeds[i].setRGB(colour[0], colour[1], colour[2]);
+    FastLED.show();
+}
+
 unsigned long previousAnimation = 0;
+
 void animate(uint8_t colour[3], uint8_t targetColour[3])
 {
     if (millis() < previousAnimation + animationStepTime)
