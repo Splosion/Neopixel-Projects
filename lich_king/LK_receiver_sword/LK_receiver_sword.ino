@@ -42,9 +42,11 @@ bool fastAnimate = false;
 bool buttonColour = false;
 int currentLED = 0;
 
+int animationStepTime = 50;
+int fastAnimationMultiplier=3;
+
 void setup(void)
 {
-    Serial.begin(9600);
     previousButtonPress = millis();
     FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS); // Setup FastLED Library
     FastLED.clear();                                    // Clear the RGB Stick LEDs
@@ -69,17 +71,14 @@ void setup(void)
 
 void loop(void)
 {
-    unsigned long currentButtonPress = millis();
-    Serial.println(currentButtonPress);
+
     while (radio.available())
     {
         radio.read(ReceivedMessage, 1); // Read information from the NRF24L01
-
         if (ReceivedMessage[0] == 111) // Indicates switch is pressed
         {
-            if (currentButtonPress - previousButtonPress >= 5000)
+            if (millis() >= previousButtonPress + 1000)
             {
-                Serial.println("Button Pressed after 5 sec");
                 previousButtonPress = millis();
                 fastAnimate = true;
                 buttonColour = !buttonColour;
@@ -91,7 +90,13 @@ void loop(void)
                 incrementBlue = 0;
                 incrementGreen = 0;
                 currentLED = 0;
+                for (int i = 0; i < NUM_LEDS; i++)
+                {
+                    leds[i].setRGB(0, 0, 0);
+                    FastLED.show();
+                }
 
+                delay(50); //debounce
             }
         }
     }
@@ -112,19 +117,23 @@ void loop(void)
     }
 }
 
+unsigned long previousAnimation = 0;
 void animate(uint8_t colour[3], uint8_t targetColour[3])
 {
+    if (millis() < previousAnimation + animationStepTime)
+        return;
+    previousAnimation = millis();
     if (incrementRed == 0 && incrementGreen == 0 && incrementBlue == 0)
     {
-        incrementRed = abs(max(targetColour[0], colour[0]) - min(targetColour[0], colour[0])) / 5;
-        incrementGreen = abs(max(targetColour[1], colour[1]) - min(targetColour[1], colour[1])) / 5;
-        incrementBlue = abs(max(targetColour[2], colour[2]) - min(targetColour[2], colour[2])) / 5;
+        incrementRed = abs(max(targetColour[0], colour[0]) - min(targetColour[0], colour[0])) / 10;
+        incrementGreen = abs(max(targetColour[1], colour[1]) - min(targetColour[1], colour[1])) / 10;
+        incrementBlue = abs(max(targetColour[2], colour[2]) - min(targetColour[2], colour[2])) / 10;
 
         if (fastAnimate)
         {
-            incrementRed = incrementRed * 2;
-            incrementGreen = incrementGreen * 2;
-            incrementBlue = incrementBlue * 2;
+            incrementRed = incrementRed * fastAnimationMultiplier;
+            incrementGreen = incrementGreen * fastAnimationMultiplier;
+            incrementBlue = incrementBlue * fastAnimationMultiplier;
         }
     }
     if (positiveIncrement)
@@ -141,14 +150,17 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
             incrementRed = 0;
             incrementGreen = 0;
             incrementBlue = 0;
-            memcpy(currentColour, noColour, 3);
 
+            if (currentLED == 4)
+            {
+                positiveIncrement = false;
+                fastAnimate = false;
+                currentLED = 0;
+                previousAnimation = millis() + 1000;
+                return;
+            }
+            memcpy(currentColour, noColour, 3);
             currentLED++;
-        }
-        if (currentLED == 5)
-        {
-            positiveIncrement = false;
-            fastAnimate = false;
         }
     }
     else
@@ -156,21 +168,9 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         currentColour[0] = max(0, colour[0] - incrementRed);
         currentColour[1] = max(0, colour[1] - incrementGreen);
         currentColour[2] = max(0, colour[2] - incrementBlue);
-        // Serial.print("CurrentColour ");
-        // Serial.print(currentColour[0]);
-        // Serial.print(", ");
-        // Serial.print(currentColour[1]);
-        // Serial.print(", ");
-        // Serial.println(currentColour[2]);
-        // Serial.print("TargetColour ");
-        // Serial.print(targetColour[0]);
-        // Serial.print(", ");
-        // Serial.print(targetColour[1]);
-        // Serial.print(", ");
-        // Serial.println(targetColour[2]);
         for (int x = 0; x != NUM_LEDS; x++)
         {
-            leds[x].setRGB(currentColour[0], currentColour[2], currentColour[2]);
+            leds[x].setRGB(currentColour[0], currentColour[1], currentColour[2]);
             FastLED.show();
         }
         if (colourCompare(currentColour, noColour) == true)
