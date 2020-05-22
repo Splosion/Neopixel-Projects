@@ -18,7 +18,7 @@ Thx!
 #define NUM_LEDS 10 // Number of leds on stick
 #define NUM_LEDS_STATIC 4
 #define LED_PIN 6 // Digital In (DI) of RGB Stick connected to pin 6 of the UNO
-#define STATIC_LED_PIN 7
+#define STATIC_LED_PIN 8
 
 CRGB leds[NUM_LEDS]; // FastLED Library Init
 CRGB staticLeds[NUM_LEDS_STATIC];
@@ -45,7 +45,8 @@ bool fastAnimate = false;
 bool buttonColour = false;
 int currentLED = 0;
 
-int animationStepTime = 50;
+int animationStepTime = 13;
+int fadeStepTime = 50;
 int fastAnimationMultiplier = 3;
 
 void setup(void)
@@ -128,24 +129,13 @@ unsigned long previousAnimation = 0;
 
 void animate(uint8_t colour[3], uint8_t targetColour[3])
 {
-    if (millis() < previousAnimation + animationStepTime)
-        return;
-    previousAnimation = millis();
-    if (incrementRed == 0 && incrementGreen == 0 && incrementBlue == 0)
-    {
-        incrementRed = abs(max(targetColour[0], colour[0]) - min(targetColour[0], colour[0])) / 10;
-        incrementGreen = abs(max(targetColour[1], colour[1]) - min(targetColour[1], colour[1])) / 10;
-        incrementBlue = abs(max(targetColour[2], colour[2]) - min(targetColour[2], colour[2])) / 10;
 
-        if (fastAnimate)
-        {
-            incrementRed = incrementRed * fastAnimationMultiplier;
-            incrementGreen = incrementGreen * fastAnimationMultiplier;
-            incrementBlue = incrementBlue * fastAnimationMultiplier;
-        }
-    }
     if (positiveIncrement)
     {
+        if (millis() < previousAnimation + animationStepTime)
+            return;
+        previousAnimation = millis();
+        SetIncrements(colour, targetColour);
         currentColour[0] = min(targetColour[0], colour[0] + incrementRed);
         currentColour[1] = min(targetColour[1], colour[1] + incrementGreen);
         currentColour[2] = min(targetColour[2], colour[2] + incrementBlue);
@@ -173,6 +163,10 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
     }
     else
     {
+        if (millis() < previousAnimation + fadeStepTime)
+            return;
+        previousAnimation = millis();
+        SetIncrements(colour, targetColour);
         currentColour[0] = max(0, colour[0] - incrementRed);
         currentColour[1] = max(0, colour[1] - incrementGreen);
         currentColour[2] = max(0, colour[2] - incrementBlue);
@@ -187,6 +181,24 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
             incrementRed = 0;
             incrementGreen = 0;
             incrementBlue = 0;
+            previousAnimation = millis() + 1000;
+        }
+    }
+}
+
+void SetIncrements(uint8_t colour[3], uint8_t targetColour[3])
+{
+    if (incrementRed == 0 && incrementGreen == 0 && incrementBlue == 0)
+    {
+        incrementRed = abs(max(targetColour[0], colour[0]) - min(targetColour[0], colour[0])) / 10;
+        incrementGreen = abs(max(targetColour[1], colour[1]) - min(targetColour[1], colour[1])) / 10;
+        incrementBlue = abs(max(targetColour[2], colour[2]) - min(targetColour[2], colour[2])) / 10;
+
+        if (fastAnimate)
+        {
+            incrementRed = incrementRed * fastAnimationMultiplier;
+            incrementGreen = incrementGreen * fastAnimationMultiplier;
+            incrementBlue = incrementBlue * fastAnimationMultiplier;
         }
     }
 }
