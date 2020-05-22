@@ -1,40 +1,32 @@
-/* 
-Created by Yvan / https://Brainy-Bits.com
-
-This code is in the public domain...
-You can: copy it, use it, modify it, share it or just plain ignore it!
-Thx!
-
-*/
-
-// NRF24L01 Module Tutorial - Code for Receiver using Arduino UNO
-
-//Include needed Libraries at beginning
 #include "nRF24L01.h" // NRF24L01 library created by TMRh20 https://github.com/TMRh20/RF24
 #include "RF24.h"
 #include "SPI.h"
 #include "FastLED.h" // FastLED library for WS2812 RGB Stick http://fastled.io/
 
-#define NUM_LEDS 10 // Number of leds on stick
-#define NUM_LEDS_STATIC 4
-#define LED_PIN 6 // Digital In (DI) of RGB Stick connected to pin 6 of the UNO
-#define STATIC_LED_PIN 8
+//led parameters
+#define numRuneLeds 10
+#define numSkullLeds 4
+#define runePin 6
+#define skullPin 8
 
-CRGB leds[NUM_LEDS]; // FastLED Library Init
-CRGB staticLeds[NUM_LEDS_STATIC];
+//initialise strips
+CRGB runeLeds[numRuneLeds];
+CRGB skullLeds[numSkullLeds];
 
 int ReceivedMessage[1] = {000}; // Used to store value received by the NRF24L01
 
-RF24 radio(10, 9); // NRF24L01 used SPI pins + Pin 9 and 10 on the UNO
+RF24 radio(10, 9);
 
-const uint64_t pipe = 0xE6E6E6E6E6E6; // Needs to be the same for communicating between 2 NRF24L01
+const uint64_t channel = 0xE6E6E6E6E6E6; // Needs to be the same for communicating between 2 NRF24L01
 
 unsigned long previousButtonPress = 0;
 
+//colours
 uint8_t blue[3] = {54, 245, 255};
 uint8_t orange[3] = {255, 45, 0};
 uint8_t noColour[3] = {0, 0, 0};
 
+//increments
 uint8_t incrementRed = 0;
 uint8_t incrementGreen = 0;
 uint8_t incrementBlue = 0;
@@ -48,12 +40,13 @@ int currentLED = 0;
 int animationStepTime = 13;
 int fadeStepTime = 50;
 int fastAnimationMultiplier = 3;
+int delaybetweenAnimations = 1000;
 
 void setup(void)
 {
     previousButtonPress = millis();
-    FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);                     // Setup FastLED Library
-    FastLED.addLeds<NEOPIXEL, STATIC_LED_PIN>(staticLeds, NUM_LEDS_STATIC); // Setup FastLED Library
+    FastLED.addLeds<NEOPIXEL, runePin>(runeLeds, numRuneLeds);                  // Setup FastLED Library
+    FastLED.addLeds<NEOPIXEL, skullPin>(skullLeds, numSkullLeds); // Setup FastLED Library
     FastLED.clear();                                                        // Clear the RGB Stick LEDs
 
     FastLED.setBrightness(85);
@@ -61,11 +54,11 @@ void setup(void)
 
     radio.begin(); // Start the NRF24L01
 
-    radio.openReadingPipe(1, pipe); // Get NRF24L01 ready to receive
+    radio.openReadingPipe(1, channel); // Get NRF24L01 ready to receive
 
     radio.startListening(); // Listen to see if information received
 
-    pinMode(LED_PIN, OUTPUT); // Set RGB Stick UNO pin to an OUTPUT
+    pinMode(runePin, OUTPUT); // Set RGB Stick UNO pin to an OUTPUT
 }
 
 void loop(void)
@@ -89,9 +82,9 @@ void loop(void)
                 incrementBlue = 0;
                 incrementGreen = 0;
                 currentLED = 0;
-                for (int i = 0; i < NUM_LEDS; i++)
+                for (int i = 0; i < numRuneLeds; i++)
                 {
-                    leds[i].setRGB(0, 0, 0);
+                    runeLeds[i].setRGB(0, 0, 0);
                     FastLED.show();
                 }
 
@@ -104,12 +97,12 @@ void loop(void)
         if (buttonColour)
         {
             animate(currentColour, orange);
-            changeStaticLeds(orange);
+            changeSkullLeds(orange);
         }
         else
         {
             animate(currentColour, blue);
-            changeStaticLeds(blue);
+            changeSkullLeds(blue);
         }
     }
     else
@@ -118,10 +111,10 @@ void loop(void)
     }
 }
 
-void changeStaticLeds(uint8_t colour[3])
+void changeSkullLeds(uint8_t colour[3])
 {
-    for (int i = 0; i < NUM_LEDS_STATIC; i++)
-        staticLeds[i].setRGB(colour[0], colour[1], colour[2]);
+    for (int i = 0; i < numSkullLeds; i++)
+        skullLeds[i].setRGB(colour[0], colour[1], colour[2]);
     FastLED.show();
 }
 
@@ -140,8 +133,8 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         currentColour[1] = min(targetColour[1], colour[1] + incrementGreen);
         currentColour[2] = min(targetColour[2], colour[2] + incrementBlue);
 
-        leds[currentLED].setRGB(currentColour[0], currentColour[1], currentColour[2]);
-        leds[currentLED + 5].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+        runeLeds[currentLED].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+        runeLeds[currentLED + 5].setRGB(currentColour[0], currentColour[1], currentColour[2]);
         FastLED.show();
         if (colourCompare(currentColour, targetColour) == true)
         {
@@ -154,7 +147,7 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
                 positiveIncrement = false;
                 fastAnimate = false;
                 currentLED = 0;
-                previousAnimation = millis() + 1000;
+                previousAnimation = millis() + delaybetweenAnimations;
                 return;
             }
             memcpy(currentColour, noColour, 3);
@@ -170,9 +163,9 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         currentColour[0] = max(0, colour[0] - incrementRed);
         currentColour[1] = max(0, colour[1] - incrementGreen);
         currentColour[2] = max(0, colour[2] - incrementBlue);
-        for (int x = 0; x != NUM_LEDS; x++)
+        for (int x = 0; x != numRuneLeds; x++)
         {
-            leds[x].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            runeLeds[x].setRGB(currentColour[0], currentColour[1], currentColour[2]);
             FastLED.show();
         }
         if (colourCompare(currentColour, noColour) == true)
@@ -181,7 +174,7 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
             incrementRed = 0;
             incrementGreen = 0;
             incrementBlue = 0;
-            previousAnimation = millis() + 1000;
+            previousAnimation = millis() + delaybetweenAnimations;
         }
     }
 }
@@ -205,13 +198,8 @@ void SetIncrements(uint8_t colour[3], uint8_t targetColour[3])
 
 boolean colourCompare(uint8_t *a, uint8_t *b)
 {
-    int n;
-
-    // test each element to be the same. if not, return false
-    for (n = 0; n < 3; n++)
+    for (int n = 0; n < 3; n++)
         if (a[n] != b[n])
             return false;
-
-    //ok, if we have not returned yet, they are equal :)
     return true;
 }
