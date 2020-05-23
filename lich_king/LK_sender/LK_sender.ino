@@ -1,21 +1,9 @@
-/*
-Created by Yvan / https://Brainy-Bits.com
-
-This code is in the public domain...
-You can: copy it, use it, modify it, share it or just plain ignore it!
-Thx!
-
-*/
-
-// NRF24L01 Module Tutorial - Code for Transmitter using Arduino NANO
-
-//Include needed Libraries at beginning
 #include "nRF24L01.h" //NRF24L01 library created by TMRh20 https://github.com/TMRh20/RF24
 #include "RF24.h"
 #include "SPI.h"
 #include "FastLED.h"
 
-#define SwitchPin 3 // Arcade switch is connected to Pin 8 on NANO
+#define SwitchPin 3
 #define helmPin 7
 #define numHelmLeds 3
 
@@ -44,8 +32,8 @@ void setup(void)
     FastLED.setBrightness(85);
     FastLED.show();
 
-    pinMode(SwitchPin, INPUT_PULLUP); // Define the arcade switch NANO pin as an Input using Internal Pullups
-    digitalWrite(SwitchPin, HIGH);    // Set Pin to HIGH at beginning
+    pinMode(SwitchPin, INPUT_PULLUP); // input w/ pullups
+    digitalWrite(SwitchPin, HIGH);    // Set Pin HIGH
 
     radio.begin();               // Start the NRF24L01
     radio.openWritingPipe(pipe); // Get NRF24L01 ready to transmit
