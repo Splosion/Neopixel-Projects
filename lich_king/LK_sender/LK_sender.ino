@@ -17,7 +17,7 @@ Thx!
 
 #define SwitchPin 3 // Arcade switch is connected to Pin 8 on NANO
 #define helmPin 7
-#define numHelmLeds 2
+#define numHelmLeds 3
 
 CRGB helmLeds[numHelmLeds];
 
@@ -33,6 +33,7 @@ uint8_t orange[3] = {255, 45, 0};
 uint8_t noColour[3] = {0, 0, 0};
 
 bool buttonColour = false;
+long previousButtonPress = 0;
 
 void setup(void)
 {
@@ -58,8 +59,11 @@ void loop(void)
         SentMessage[0] = 111;
         Serial.write("1");
         radio.write(SentMessage, 1); // Send value through NRF24L01
-
-        buttonColour = true;
+        if (millis() >= previousButtonPress + 1000)
+        {
+            previousButtonPress = millis();
+            buttonColour = !buttonColour;
+        }
         delay(50); //debounce
     }
     if (buttonColour)
