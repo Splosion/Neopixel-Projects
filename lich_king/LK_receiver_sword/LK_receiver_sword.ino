@@ -41,13 +41,14 @@ int animationStepTime = 13;
 int fadeStepTime = 50;
 int fastAnimationMultiplier = 3;
 int delaybetweenAnimations = 1000;
+int numLedsInSingleRuneStrip = 13;
 
 void setup(void)
 {
     previousButtonPress = millis();
-    FastLED.addLeds<NEOPIXEL, runePin>(runeLeds, numRuneLeds);                  // Setup FastLED Library
+    FastLED.addLeds<NEOPIXEL, runePin>(runeLeds, numRuneLeds);    // Setup FastLED Library
     FastLED.addLeds<NEOPIXEL, skullPin>(skullLeds, numSkullLeds); // Setup FastLED Library
-    FastLED.clear();                                                        // Clear the RGB Stick LEDs
+    FastLED.clear();                                              // Clear the RGB Stick LEDs
 
     FastLED.setBrightness(85);
     FastLED.show();
@@ -133,8 +134,59 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         currentColour[1] = min(targetColour[1], colour[1] + incrementGreen);
         currentColour[2] = min(targetColour[2], colour[2] + incrementBlue);
 
-        runeLeds[currentLED].setRGB(currentColour[0], currentColour[1], currentColour[2]);
-        runeLeds[currentLED + 5].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+        //firstRune = 3
+        //secondRune = 1
+        //thirdRune = 2
+        //fourthRune = 4
+        //fifthRune = 3
+
+        switch (currentLED) //this is a little too specific to frostmourne, optimise? also DRY
+        {
+        case 0:
+        case 1:
+        case 2:
+            for (int i = currentLED; i < 2; i++)
+            {
+                runeLeds[i].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+                runeLeds[i + numLedsInSingleRuneStrip].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            }
+            currentLED = 3;
+            break;
+        case 3:
+            runeLeds[currentLED].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            runeLeds[currentLED + numLedsInSingleRuneStrip].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            currentLED = 4;
+            break;
+        case 4:
+        case 5:
+            for (int i = currentLED; i < 5; i++)
+            {
+                runeLeds[i].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+                runeLeds[i + numLedsInSingleRuneStrip].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            }
+            currentLED = 36 break;
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+            for (int i = currentLED; i < 9; i++)
+            {
+                runeLeds[i].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+                runeLeds[i + numLedsInSingleRuneStrip].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            }
+            currentLED = 10;
+            break;
+        case 10:
+        case 11:
+        case 12:
+            for (int i = currentLED; i < 12; i++)
+            {
+                runeLeds[i].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+                runeLeds[i + numLedsInSingleRuneStrip].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            }
+            currentLED = 12;
+            break;
+        }
         FastLED.show();
         if (colourCompare(currentColour, targetColour) == true)
         {
@@ -142,7 +194,7 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
             incrementGreen = 0;
             incrementBlue = 0;
 
-            if (currentLED == 4)
+            if (currentLED == 12) //end of this rune strip
             {
                 positiveIncrement = false;
                 fastAnimate = false;
