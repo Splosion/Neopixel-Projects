@@ -3,8 +3,9 @@
 #include "SPI.h"
 #include "FastLED.h"
 
-#define SwitchPin 3
+#define SwitchPin 4
 #define shoulderPin 2
+#define shoulderPin2 3
 #define numShoulderLeds 60
 //top 10 19 11
 //sides 8 8     8 8
@@ -12,6 +13,7 @@
 //total = 96
 
 CRGB shoulderLeds[numShoulderLeds];
+CRGB shoulderLeds2[numShoulderLeds];
 
 int SentMessage[1] = {000}; // Used to store value before being sent through the NRF24L01
 
@@ -34,6 +36,7 @@ void setup(void)
     Serial.begin(9600);
 
     FastLED.addLeds<NEOPIXEL, shoulderPin>(shoulderLeds, numShoulderLeds);
+    FastLED.addLeds<NEOPIXEL, shoulderPin2>(shoulderLeds2, numShoulderLeds);
     FastLED.clear();
     FastLED.setBrightness(100);
     FastLED.show();
@@ -75,6 +78,7 @@ void changeLeds(uint8_t colour[3])
     for (int i = 0; i < numShoulderLeds; i++)
     {
         shoulderLeds[i].setRGB(colour[0], colour[1], colour[2]);
+        shoulderLeds2[i].setRGB(colour[0], colour[1], colour[2]);
         FastLED.show();
     }
 }
