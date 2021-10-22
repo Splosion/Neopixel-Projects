@@ -4,18 +4,19 @@
 #include "FastLED.h" // FastLED library for WS2812 RGB Stick http://fastled.io/
 
 //led parameters
-#define numRuneLeds 10
-#define numSkullLeds 4
-#define runePin 6
-#define skullPin 8
+#define numLedsOne 7
+#define numLedsTwo 6
+#define pinOne 6
+#define pinTwo 5
+
 
 //initialise strips
-CRGB runeLeds[numRuneLeds];
-CRGB skullLeds[numSkullLeds];
+CRGB stripOne[numLedsOne];
+CRGB stripTwo[numLedsTwo];
 
 int ReceivedMessage[1] = {000}; // Used to store value received by the NRF24L01
 
-RF24 radio(10, 9);
+RF24 radio(10, 9); //10 CE 9 CSN
 
 const uint64_t channel = 0xE6E6E6E6E6E6; // Needs to be the same for communicating between 2 NRF24L01
 
@@ -23,7 +24,8 @@ unsigned long previousButtonPress = 0;
 
 //colours
 uint8_t blue[3] = {54, 245, 255};
-uint8_t orange[3] = {255, 45, 0};
+uint8_t yellow[3] = {195, 97, 0};
+uint8_t purple[3] = {255, 0, 255};
 uint8_t noColour[3] = {0, 0, 0};
 
 //increments
@@ -34,7 +36,9 @@ uint8_t currentColour[3] = {0, 0, 0};
 
 bool positiveIncrement = true;
 bool fastAnimate = false;
-bool buttonColour = false;
+uint8_t buttonPressed = 1;
+
+
 int currentLED = 0;
 
 int animationStepTime = 13;
@@ -44,21 +48,23 @@ int delaybetweenAnimations = 1000;
 
 void setup(void)
 {
+      Serial.begin(9600);
+
     previousButtonPress = millis();
-    FastLED.addLeds<NEOPIXEL, runePin>(runeLeds, numRuneLeds);                  // Setup FastLED Library
-    FastLED.addLeds<NEOPIXEL, skullPin>(skullLeds, numSkullLeds); // Setup FastLED Library
+    FastLED.addLeds<NEOPIXEL, pinOne>(stripOne, numLedsOne);                  // Setup FastLED Library
+    FastLED.addLeds<NEOPIXEL, pinTwo>(stripTwo, numLedsTwo);                  // Setup FastLED Library
+
     FastLED.clear();                                                        // Clear the RGB Stick LEDs
 
     FastLED.setBrightness(85);
     FastLED.show();
 
     radio.begin(); // Start the NRF24L01
-
     radio.openReadingPipe(1, channel); // Get NRF24L01 ready to receive
-
     radio.startListening(); // Listen to see if information received
 
-    pinMode(runePin, OUTPUT); // Set RGB Stick UNO pin to an OUTPUT
+    pinMode(pinOne, OUTPUT); // Set RGB Stick UNO pin to an OUTPUT
+    pinMode(pinTwo, OUTPUT);
 }
 
 void loop(void)
@@ -67,14 +73,64 @@ void loop(void)
     while (radio.available())
     {
         radio.read(ReceivedMessage, 1); // Read information from the NRF24L01
-        if (ReceivedMessage[0] == 111)  // Indicates switch is pressed
+        switch(ReceivedMessage[0]){
+          case 111:
+            buttonPressed=1;
+            ResetAnimation(); 
+                  Serial.write("1");
+
+            break;
+          case 101:
+            buttonPressed=2;
+            ResetAnimation(); 
+                  Serial.write("2");
+
+            break;
+          case 110:
+            buttonPressed=3;
+            ResetAnimation();
+                  Serial.write("3");
+ 
+            break;
+          default:
+            buttonPressed=0;
+            break;
+        }
+        
+    }
+    if (positiveIncrement)
         {
-            if (millis() >= previousButtonPress + 1000)
+          switch(buttonPressed){
+            case 1:
+              animate(currentColour, blue);
+              changestripTwo(blue);
+              break;
+            case 2:
+              animate(currentColour, yellow);
+              changestripTwo(yellow);
+              break;
+            case 3:
+              animate(currentColour, purple);
+              changestripTwo(purple);
+              break;
+            default:
+              animate(currentColour, blue);
+              changestripTwo(blue);
+             break;
+          }
+        }
+        else
+        {
+            animate(currentColour, noColour);
+        }
+}
+
+void ResetAnimation()
+{
+  if (millis() >= previousButtonPress + 1000)
             {
                 previousButtonPress = millis();
                 fastAnimate = true;
-                buttonColour = !buttonColour;
-
                 //reset animation
                 positiveIncrement = true;
                 memcpy(currentColour, noColour, 3);
@@ -82,39 +138,20 @@ void loop(void)
                 incrementBlue = 0;
                 incrementGreen = 0;
                 currentLED = 0;
-                for (int i = 0; i < numRuneLeds; i++)
+                for (int i = 0; i < numLedsOne; i++)
                 {
-                    runeLeds[i].setRGB(0, 0, 0);
+                    stripOne[i].setRGB(0, 0, 0);
                     FastLED.show();
                 }
 
                 delay(50); //debounce
             }
-        }
-    }
-    if (positiveIncrement)
-    {
-        if (buttonColour)
-        {
-            animate(currentColour, orange);
-            changeSkullLeds(orange);
-        }
-        else
-        {
-            animate(currentColour, blue);
-            changeSkullLeds(blue);
-        }
-    }
-    else
-    {
-        animate(currentColour, noColour);
-    }
 }
 
-void changeSkullLeds(uint8_t colour[3])
+void changestripTwo(uint8_t colour[3])
 {
-    for (int i = 0; i < numSkullLeds; i++)
-        skullLeds[i].setRGB(colour[0], colour[1], colour[2]);
+    for (int i = 0; i < numLedsTwo; i++)
+        stripTwo[i].setRGB(colour[0], colour[1], colour[2]);
     FastLED.show();
 }
 
@@ -133,9 +170,9 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         currentColour[1] = min(targetColour[1], colour[1] + incrementGreen);
         currentColour[2] = min(targetColour[2], colour[2] + incrementBlue);
 
-        runeLeds[currentLED].setRGB(currentColour[0], currentColour[1], currentColour[2]);
-        runeLeds[currentLED+1].setRGB(currentColour[0], currentColour[1], currentColour[2]);
-        // runeLeds[currentLED + 5].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+        stripOne[currentLED].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+        stripOne[currentLED+1].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+        // stripOne[currentLED + 5].setRGB(currentColour[0], currentColour[1], currentColour[2]);
         FastLED.show();
         if (colourCompare(currentColour, targetColour) == true)
         {
@@ -164,9 +201,9 @@ void animate(uint8_t colour[3], uint8_t targetColour[3])
         currentColour[0] = max(0, colour[0] - incrementRed);
         currentColour[1] = max(0, colour[1] - incrementGreen);
         currentColour[2] = max(0, colour[2] - incrementBlue);
-        for (int x = 0; x != numRuneLeds; x++)
+        for (int x = 0; x != numLedsOne; x++)
         {
-            runeLeds[x].setRGB(currentColour[0], currentColour[1], currentColour[2]);
+            stripOne[x].setRGB(currentColour[0], currentColour[1], currentColour[2]);
             FastLED.show();
         }
         if (colourCompare(currentColour, noColour) == true)
